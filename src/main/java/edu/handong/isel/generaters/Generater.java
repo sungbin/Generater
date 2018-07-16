@@ -49,7 +49,7 @@ public class Generater {
 
 	private void run(String[] args) throws IOException, InterruptedException {
 		Generater gn = new Generater();
-
+		
 		gn.setDir("Data");
 		gn.setPathOfIm("markov-text");
 
@@ -67,6 +67,18 @@ public class Generater {
 				}
 			}
 		}
+		
+		System.out.println(System.getProperty("user.dir"));
+		
+//		dirFile = new File(".");
+//		System.out.println(dirFile.getAbsolutePath());
+		
+//		File[] fileList2 = new File(".").listFiles();
+//		for(File tempFile : fileList2) {
+//			System.out.println(tempFile);
+//		}
+		
+		
 		System.out.println("making from data...");
 		for (File data : datas) {
 
