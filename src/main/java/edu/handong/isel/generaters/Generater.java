@@ -66,17 +66,67 @@ public class Generater {
 			}
 		}
 		System.out.println("making from data...");
-		for (File data : datas) {
+//		ArrayList<Integer> Ilist = new ArrayList<Integer>();
+//		System.out.println("80번 반복");
+//		int i;
+//		for (i = 0; i < 80; i++) {
+			for (File data : datas) {
 
-			String lineNum = String.valueOf(gn.getLineOfNum(data));
+				String lineNum = String.valueOf(gn.getWordOfNum(data)/96);
+				// String lineNum = String.valueOf(gn.getLineOfNum(data));
+//				String wordNum = String.valueOf(gn.getWordOfNum(data));
+				// System.out.println("라인 수는:" + lineNum);
+				// System.out.println("글자 수는:" + wordNum);
 
-			String[] cmd1 = { "python", "markov2.py", "parse", "temp", "2", data.getAbsolutePath() };
-			String[] cmd2 = { "python", "markov2.py", "gen", "temp", lineNum };
+				String[] cmd1 = { "python", "markov2.py", "parse", "temp", "2", data.getAbsolutePath() };
+				String[] cmd2 = { "python", "markov2.py", "gen", "temp", lineNum };
 
-			gn.executeCmd1(cmd1, gn.getPathOfIm());
-			gn.executeCmd2(cmd2, gn.getPathOfIm(), data);
-		}
+				gn.executeCmd1(cmd1, gn.getPathOfIm());
+				gn.executeCmd2(cmd2, gn.getPathOfIm(), data);
+
+//				File nnf = new File("result/" + data.getName());
+
+//				wordNum = String.valueOf(gn.getWordOfNum(nnf));
+//				lineNum = String.valueOf(gn.getLineOfNum(nnf));
+
+				// System.out.println(nnf+"의 라인 수는:" + lineNum);
+				// System.out.println(nnf+"의 글자 수는:" + wordNum);
+
+//				 System.out.println("(원래 있던 글자수)/(라인 수): " +
+//				 (gn.getWordOfNum(data))/Integer.parseInt(lineNum));
+				
+//				System.out.println("원래 글자수 : " + gn.getWordOfNum(data) + ", 결과 글자수: " + wordNum);
+				
+//				Ilist.add(gn.getWordOfNum(data) / Integer.parseInt(lineNum));
+
+			}
+//		}
+//		int sum = 0;
+//		for(Integer member : Ilist) {
+//			sum+=member;
+//		}
+//		int aver = sum / Ilist.size();
+//		System.out.println("80번 반복했을 때 평균: "+aver);
+		
 		System.out.println("saved in result");
+	}
+
+	private int getWordOfNum(File data) {
+		int numOfWord = -1;
+		try {
+			numOfWord = 0;
+			////////////////////////////////////////////////////////////////
+			BufferedReader in = new BufferedReader(new FileReader(data));
+			while (in.read() != -1) {
+				numOfWord++;
+			}
+			in.close();
+			////////////////////////////////////////////////////////////////
+		} catch (IOException e) {
+			System.err.println(e); // 에러가 있다면 메시지 출력
+			System.exit(1);
+		}
+		return numOfWord;
 	}
 
 	private void executeCmd1(String[] cmd, String pathOfIm) throws IOException, InterruptedException {
@@ -124,7 +174,7 @@ public class Generater {
 		}
 
 		fw.close();
-		System.out.println("	" +newFile.getAbsolutePath());
+		 System.out.println(" " +newFile.getAbsolutePath());
 
 	}
 
