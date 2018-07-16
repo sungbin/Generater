@@ -6,6 +6,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 
 public class Generater {
@@ -35,12 +36,14 @@ public class Generater {
 
 		try {
 			gn.run(args);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
+		} catch(Exception e) {
 			e.printStackTrace();
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			try {
+				Thread.sleep(10000);
+			} catch (InterruptedException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
 		}
 
 	}
@@ -48,34 +51,9 @@ public class Generater {
 	private void run(String[] args) throws IOException, InterruptedException {
 		Generater gn = new Generater();
 		
-		/**/
+		System.out.println("system default encoding : " + System.getProperty("file.encoding"));
 
-		String word = "인코딩 문제인가? 이클립스 문제인가? WAS문제 인가 그것이 알고 싶다....";
-		System.out.println("utf-8 -> euc-kr        : " + new String(word.getBytes("utf-8"), "euc-kr"));
-		System.out.println("utf-8 -> ksc5601       : " + new String(word.getBytes("utf-8"), "ksc5601"));
-		System.out.println("utf-8 -> x-windows-949 : " + new String(word.getBytes("utf-8"), "x-windows-949"));
-		System.out.println("utf-8 -> iso-8859-1    : " + new String(word.getBytes("utf-8"), "iso-8859-1"));
-		System.out.println("iso-8859-1 -> euc-kr        : " + new String(word.getBytes("iso-8859-1"), "euc-kr"));
-		System.out.println("iso-8859-1 -> ksc5601       : " + new String(word.getBytes("iso-8859-1"), "ksc5601"));
-		System.out.println("iso-8859-1 -> x-windows-949 : " + new String(word.getBytes("iso-8859-1"), "x-windows-949"));
-		System.out.println("iso-8859-1 -> utf-8         : " + new String(word.getBytes("iso-8859-1"), "utf-8"));
-		System.out.println("euc-kr -> utf-8         : " + new String(word.getBytes("euc-kr"), "utf-8"));
-		System.out.println("euc-kr -> ksc5601       : " + new String(word.getBytes("euc-kr"), "ksc5601"));
-		System.out.println("euc-kr -> x-windows-949 : " + new String(word.getBytes("euc-kr"), "x-windows-949"));
-		System.out.println("euc-kr -> iso-8859-1    : " + new String(word.getBytes("euc-kr"), "iso-8859-1"));
-		System.out.println("ksc5601 -> euc-kr        : " + new String(word.getBytes("ksc5601"), "euc-kr"));
-		System.out.println("ksc5601 -> utf-8         : " + new String(word.getBytes("ksc5601"), "utf-8"));
-		System.out.println("ksc5601 -> x-windows-949 : " + new String(word.getBytes("ksc5601"), "x-windows-949"));
-		System.out.println("ksc5601 -> iso-8859-1    : " + new String(word.getBytes("ksc5601"), "iso-8859-1"));
-		System.out.println("x-windows-949 -> euc-kr     : " + new String(word.getBytes("x-windows-949"), "euc-kr"));
-		System.out.println("x-windows-949 -> utf-8      : " + new String(word.getBytes("x-windows-949"), "utf-8"));
-		System.out.println("x-windows-949 -> ksc5601    : " + new String(word.getBytes("x-windows-949"), "ksc5601"));
-		System.out.println("x-windows-949 -> iso-8859-1 : " + new String(word.getBytes("x-windows-949"), "iso-8859-1"));
-
-
-		//출처: http://devlop.tistory.com/6 [삽질 LEE의 아이티 이야기]
 		
-		/**/
 		gn.setDir("Data");
 		gn.setPathOfIm("markov-text");
 
@@ -94,48 +72,17 @@ public class Generater {
 			}
 		}
 		System.out.println("making from data...");
-//		ArrayList<Integer> Ilist = new ArrayList<Integer>();
-//		System.out.println("80번 반복");
-//		int i;
-//		for (i = 0; i < 80; i++) {
-			for (File data : datas) {
+		for (File data : datas) {
 
-				String lineNum = String.valueOf(gn.getWordOfNum(data)/96);
-				// String lineNum = String.valueOf(gn.getLineOfNum(data));
-//				String wordNum = String.valueOf(gn.getWordOfNum(data));
-				// System.out.println("라인 수는:" + lineNum);
-				// System.out.println("글자 수는:" + wordNum);
+			String lineNum = String.valueOf(gn.getWordOfNum(data) / 96);
 
-				String[] cmd1 = { "python", "markov2.py", "parse", "temp", "2", data.getAbsolutePath() };
-				String[] cmd2 = { "python", "markov2.py", "gen", "temp", lineNum };
+			String[] cmd1 = { "python", "markov2.py", "parse", "temp", "2", data.getAbsolutePath() };
+			String[] cmd2 = { "python", "markov2.py", "gen", "temp", lineNum };
 
-				gn.executeCmd1(cmd1, gn.getPathOfIm());
-				gn.executeCmd2(cmd2, gn.getPathOfIm(), data);
+			gn.executeCmd1(cmd1, gn.getPathOfIm());
+			gn.executeCmd2(cmd2, gn.getPathOfIm(), data);
+		}
 
-//				File nnf = new File("result/" + data.getName());
-
-//				wordNum = String.valueOf(gn.getWordOfNum(nnf));
-//				lineNum = String.valueOf(gn.getLineOfNum(nnf));
-
-				// System.out.println(nnf+"의 라인 수는:" + lineNum);
-				// System.out.println(nnf+"의 글자 수는:" + wordNum);
-
-//				 System.out.println("(원래 있던 글자수)/(라인 수): " +
-//				 (gn.getWordOfNum(data))/Integer.parseInt(lineNum));
-				
-//				System.out.println("원래 글자수 : " + gn.getWordOfNum(data) + ", 결과 글자수: " + wordNum);
-				
-//				Ilist.add(gn.getWordOfNum(data) / Integer.parseInt(lineNum));
-
-			}
-//		}
-//		int sum = 0;
-//		for(Integer member : Ilist) {
-//			sum+=member;
-//		}
-//		int aver = sum / Ilist.size();
-//		System.out.println("80번 반복했을 때 평균: "+aver);
-		
 		System.out.println("saved in result");
 	}
 
@@ -179,9 +126,9 @@ public class Generater {
 		BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
 		String line;
 		ArrayList<String> lines = new ArrayList<String>();
-		while ((line = reader.readLine()) != null)
-		{
-			System.out.println(line);//.getBytes("UTF-8"));
+		while ((line = reader.readLine()) != null) {
+			//String decodedString = URLDecoder.decode(line, "UTF-8");
+			//lines.add(decodedString);
 			lines.add(line);
 		}
 		process.waitFor();
@@ -205,7 +152,7 @@ public class Generater {
 		}
 
 		fw.close();
-		 System.out.println(" " +newFile.getAbsolutePath());
+		System.out.println(" " + newFile.getAbsolutePath());
 
 	}
 
