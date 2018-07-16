@@ -19,26 +19,26 @@ if __name__ == '__main__':
 
 	mode  = args[1]
 	name  = args[2]
-	
+
 	if mode == 'parse':
 		if (len(args) != 5):
 			raise ValueError(usage)
-		
+
 		depth = int(args[3])
 		file_name = args[4]
-		
+
 		db = Db(sqlite3.connect(name + '.db'), Sql())
 		db.setup(depth)
-		
-		txt = codecs.open(file_name, 'r', 'utf-8').read()
+
+		txt = codecs.open(file_name, 'r', 'UTF-8').read()
 		Parser(name, db, SENTENCE_SEPARATOR, WORD_SEPARATOR).parse(txt)
-	
+
 	elif mode == 'gen':
 		count = int(args[3])
 		db = Db(sqlite3.connect(name + '.db'), Sql())
 		generator = Generator(name, db, Rnd())
 		for i in range(0, count):
-			print(generator.generate(WORD_SEPARATOR).encode('utf8'))
-	
+			print(generator.generate(WORD_SEPARATOR))
+
 	else:
 		raise ValueError(usage)
