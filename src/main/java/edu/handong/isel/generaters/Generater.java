@@ -5,9 +5,18 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
+
+import org.apache.commons.codec.DecoderException;
+import org.apache.commons.codec.binary.Hex;
 
 public class Generater {
 
@@ -36,7 +45,7 @@ public class Generater {
 
 		try {
 			gn.run(args);
-		} catch(Exception e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 			try {
 				Thread.sleep(10000);
@@ -48,12 +57,9 @@ public class Generater {
 
 	}
 
-	private void run(String[] args) throws IOException, InterruptedException {
+	private void run(String[] args) throws IOException, InterruptedException, DecoderException {
 		Generater gn = new Generater();
-		
-		System.out.println("system default encoding : " + System.getProperty("file.encoding"));
 
-		
 		gn.setDir("Data");
 		gn.setPathOfIm("markov-text");
 
@@ -71,28 +77,28 @@ public class Generater {
 				}
 			}
 		}
-		
+
 		System.out.println(System.getProperty("user.dir"));
-		
-//		dirFile = new File(".");
-//		System.out.println(dirFile.getAbsolutePath());
-		
-//		File[] fileList2 = new File(".").listFiles();
-//		for(File tempFile : fileList2) {
-//			System.out.println(tempFile);
-//		}
-		
-		
+
+		// dirFile = new File(".");
+		// System.out.println(dirFile.getAbsolutePath());
+
+		// File[] fileList2 = new File(".").listFiles();
+		// for(File tempFile : fileList2) {
+		// System.out.println(tempFile);
+		// }
+
 		System.out.println("making from data...");
 		for (File data : datas) {
 
 			String lineNum = String.valueOf(gn.getWordOfNum(data) / 96);
-			
-			String[] cmd1 = {"python", "markov2.py", "parse", "temp", "2", data.getAbsolutePath() };
-			String[] cmd2 = {"python", "markov2.py", "gen", "temp", lineNum };
-			
-//			String[] cmd1 = { "python", "markov2.py", "parse", "temp", "2", data.getAbsolutePath() };
-//			String[] cmd2 = { "python", "markov2.py", "gen", "temp", lineNum };
+
+			String[] cmd1 = { "python", "markov.py", "parse", "temp", "2", data.getAbsolutePath() };
+			String[] cmd2 = { "python", "markov.py", "gen", "temp", lineNum };
+
+			// String[] cmd1 = { "python", "markov2.py", "parse", "temp", "2",
+			// data.getAbsolutePath() };
+			// String[] cmd2 = { "python", "markov2.py", "gen", "temp", lineNum };
 
 			gn.executeCmd1(cmd1, gn.getPathOfIm());
 			gn.executeCmd2(cmd2, gn.getPathOfIm(), data);
@@ -119,39 +125,60 @@ public class Generater {
 		return numOfWord;
 	}
 
-	private void executeCmd1(String[] cmd, String pathOfIm) throws IOException, InterruptedException {
+	private void executeCmd1(String[] cmd, String pathOfIm) throws IOException, InterruptedException, DecoderException {
 		ProcessBuilder pb = new ProcessBuilder(cmd);
 		pb.directory(new File(pathOfIm));
 		pb.redirectErrorStream(true);
 		Process process = pb.start();
-		BufferedReader stdOut   = new BufferedReader(new InputStreamReader(process.getInputStream()));
-	    BufferedReader stdError = new BufferedReader(new InputStreamReader(process.getErrorStream()));
+		BufferedReader stdOut = new BufferedReader(new InputStreamReader(process.getInputStream()));
+		BufferedReader stdError = new BufferedReader(new InputStreamReader(process.getErrorStream()));
 		String line;
-		while ((line =   stdOut.readLine()) != null) System.out.println(line);
-		System.out.println("@@@\n@@@\n@@@");
-	    while ((line = stdError.readLine()) != null) System.err.println(line);
-		process.waitFor();
-
-	}
-
-	private void executeCmd2(String[] cmd, String pathOfIm, File file) throws IOException, InterruptedException {
-		ProcessBuilder pb = new ProcessBuilder(cmd);
-		Generater gn = new Generater();
-		pb.directory(new File(pathOfIm));
-		pb.redirectErrorStream(true);
-		Process process = pb.start();
-		BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-		String line;
-		ArrayList<String> lines = new ArrayList<String>();
-		while ((line = reader.readLine()) != null) {
+		while ((line = stdOut.readLine()) != null) {
 			System.out.println(line);
-			lines.add(line);
 		}
+		while ((line = stdError.readLine()) != null)
+			System.err.println("error: " + line);
 		process.waitFor();
-		gn.makeOut(lines, file);
+
 	}
 
-	private void makeOut(ArrayList<String> lines, File file) throws IOException {
+	private void executeCmd2(String[] cmd, String pathOfIm, File file)
+			throws IOException, InterruptedException, DecoderException {
+		ArrayList<String> lines = new ArrayList<String>();
+		Generater gn = new Generater();
+		boolean recur = true;
+		while (recur) {
+			while (true) {
+				boolean recur2 = false;
+				ProcessBuilder pb = new ProcessBuilder(cmd);
+				pb.directory(new File(pathOfIm));
+				pb.redirectErrorStream(true);
+				Process process = pb.start();
+				BufferedReader reader = new BufferedReader(
+						new InputStreamReader(process.getInputStream(), "ISO-8859-1"));
+				String line;
+				while ((line = reader.readLine()) != null) {
+					String nline;
+
+					nline = new String(line.getBytes("iso-8859-1"), "ksc5601");
+					if (nline.contains("Traceback")) {
+						recur2 = true;
+						break;
+					}
+					lines.add(nline);
+				}
+				process.waitFor();
+				if (recur2)
+					break;
+			}
+//			System.out.println(gn.makeOut(lines, file));
+//			System.out.println(3*gn.getWordOfNum(file)/4);
+			if(gn.makeOut(lines, file)>3*gn.getWordOfNum(file)/4)
+				recur = false;
+		}
+	}
+
+	private int makeOut(ArrayList<String> lines, File file) throws IOException {
 		File curDir = new File("result");
 
 		if (!curDir.exists()) {
@@ -163,12 +190,14 @@ public class Generater {
 		FileWriter fw = new FileWriter(newFile, false);
 
 		for (String txt : lines) {
-			fw.write(txt + "\n");
+			fw.write(txt +" ");
 			fw.flush();
 		}
 
 		fw.close();
 		System.out.println(" " + newFile.getAbsolutePath());
+		
+		return this.getWordOfNum(newFile);
 
 	}
 
