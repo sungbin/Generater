@@ -128,8 +128,7 @@ public class Generater {
 	    BufferedReader stdError = new BufferedReader(new InputStreamReader(process.getErrorStream()));
 		String line;
 		while ((line =   stdOut.readLine()) != null) System.out.println(line);
-		System.out.println("@@@\n@@@\n@@@");
-	    while ((line = stdError.readLine()) != null) System.err.println(line);
+	    while ((line = stdError.readLine()) != null) System.err.println("@@@"+line);
 		process.waitFor();
 
 	}
