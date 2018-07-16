@@ -176,7 +176,7 @@ public class Generater {
 		pb.directory(new File(pathOfIm));
 		pb.redirectErrorStream(true);
 		Process process = pb.start();
-		BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(),"EUC-KR"));
+		BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
 		String line;
 		ArrayList<String> lines = new ArrayList<String>();
 		while ((line = reader.readLine()) != null)
