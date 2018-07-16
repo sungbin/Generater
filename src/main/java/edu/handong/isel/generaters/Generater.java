@@ -71,13 +71,28 @@ public class Generater {
 				}
 			}
 		}
+		
+		System.out.println(System.getProperty("user.dir"));
+		
+//		dirFile = new File(".");
+//		System.out.println(dirFile.getAbsolutePath());
+		
+//		File[] fileList2 = new File(".").listFiles();
+//		for(File tempFile : fileList2) {
+//			System.out.println(tempFile);
+//		}
+		
+		
 		System.out.println("making from data...");
 		for (File data : datas) {
 
 			String lineNum = String.valueOf(gn.getWordOfNum(data) / 96);
-
-			String[] cmd1 = { "python", "markov2.py", "parse", "temp", "2", data.getAbsolutePath() };
-			String[] cmd2 = { "python", "markov2.py", "gen", "temp", lineNum };
+			
+			String[] cmd1 = {"python", "markov2.py", "parse", "temp", "2", data.getAbsolutePath() };
+			String[] cmd2 = {"python", "markov2.py", "gen", "temp", lineNum };
+			
+//			String[] cmd1 = { "python", "markov2.py", "parse", "temp", "2", data.getAbsolutePath() };
+//			String[] cmd2 = { "python", "markov2.py", "gen", "temp", lineNum };
 
 			gn.executeCmd1(cmd1, gn.getPathOfIm());
 			gn.executeCmd2(cmd2, gn.getPathOfIm(), data);
@@ -109,10 +124,12 @@ public class Generater {
 		pb.directory(new File(pathOfIm));
 		pb.redirectErrorStream(true);
 		Process process = pb.start();
-		BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+		BufferedReader stdOut   = new BufferedReader(new InputStreamReader(process.getInputStream()));
+	    BufferedReader stdError = new BufferedReader(new InputStreamReader(process.getErrorStream()));
 		String line;
-		while ((line = reader.readLine()) != null)
-			System.out.println(line);
+		while ((line =   stdOut.readLine()) != null) System.out.println(line);
+		System.out.println("@@@\n@@@\n@@@");
+	    while ((line = stdError.readLine()) != null) System.err.println(line);
 		process.waitFor();
 
 	}
@@ -127,8 +144,7 @@ public class Generater {
 		String line;
 		ArrayList<String> lines = new ArrayList<String>();
 		while ((line = reader.readLine()) != null) {
-			//String decodedString = URLDecoder.decode(line, "UTF-8");
-			//lines.add(decodedString);
+			System.out.println(line);
 			lines.add(line);
 		}
 		process.waitFor();
