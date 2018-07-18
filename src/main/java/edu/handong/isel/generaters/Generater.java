@@ -2,20 +2,11 @@ package edu.handong.isel.generaters;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
-import java.net.URLEncoder;
-import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.Collection;
 
 public class Generater {
 
@@ -56,8 +47,11 @@ public class Generater {
 
 	}
 
-	private void run(String[] args) throws IOException, InterruptedException {
+	private void run(String[] args) throws Exception {
 		Generater gn = new Generater();
+
+		System.out.println("start Program from... ");
+		System.out.println(System.getProperty("user.dir"));
 
 		gn.setDir("Data");
 		gn.setPathOfIm("markov-text");
@@ -77,81 +71,20 @@ public class Generater {
 			}
 		}
 
-		System.out.println(System.getProperty("user.dir"));
-
-		// dirFile = new File(".");
-		// System.out.println(dirFile.getAbsolutePath());
-
-		// File[] fileList2 = new File(".").listFiles();
-		// for(File tempFile : fileList2) {
-		// System.out.println(tempFile);
-		// }
-
 		System.out.println("making from data...");
 		for (File data : datas) {
+			// System.out.println("gn.getWordOfNum(data): " +gn.getWordOfNum(data));
 
 			String lineNum = String.valueOf(gn.getWordOfNum(data) / 96);
 
 			String[] cmd1 = { "python", "markov.py", "parse", "temp", "2", data.getAbsolutePath() };
 			String[] cmd2 = { "python", "markov.py", "gen", "temp", lineNum };
 
-			// String[] cmd1 = { "python", "markov2.py", "parse", "temp", "2",
-			// data.getAbsolutePath() };
-			// String[] cmd2 = { "python", "markov2.py", "gen", "temp", lineNum };
-
 			gn.executeCmd1(cmd1, gn.getPathOfIm());
 			gn.executeCmd2(cmd2, gn.getPathOfIm(), data);
 		}
 
 		System.out.println("saved in result");
-
-	}
-
-	private void editData(File data, ArrayList<String> newLines) throws IOException {
-		FileWriter fw = new FileWriter(data, false);
-
-		for (String line : newLines) {
-			fw.write(line + "\n");
-		}
-		fw.flush();
-
-	}
-
-	private ArrayList<String> extractOfData(File data) throws IOException {
-		ArrayList<String> newLines = new ArrayList<String>();
-		ArrayList<String> oldLines = new ArrayList<String>();
-
-		FileReader fr = new FileReader(data);
-		BufferedReader br = new BufferedReader(fr);
-
-		String line;
-		while ((line = br.readLine()) != null) {
-			// System.out.println(line);
-			oldLines.add(line);
-		}
-
-		for (String temp : oldLines) {
-			if (temp.length() > 100) {
-				newLines.addAll(this.divideLines(temp));
-			}
-		}
-
-		return newLines;
-	}
-
-	private ArrayList<String> divideLines(String line) {
-
-		ArrayList<String> newLines = new ArrayList<String>();
-		int max = line.length();
-		int i, lastest = 0;
-		for (i = 0; i < max; i++) {
-			if (line.charAt(i) == '.' || lastest - i > 100) {
-				newLines.add(line.substring(lastest + 1, i) + ".");
-				lastest = i + 1;
-			}
-		}
-
-		return newLines;
 	}
 
 	private int getWordOfNum(File data) {
@@ -166,14 +99,13 @@ public class Generater {
 			in.close();
 			////////////////////////////////////////////////////////////////
 		} catch (IOException e) {
-			System.err.println(e); // 에러가 있다면 메시지 출력
+			System.err.println(e);
 			System.exit(1);
 		}
-		System.out.println("word: " + numOfWord);
 		return numOfWord;
 	}
 
-	private void executeCmd1(String[] cmd, String pathOfIm) throws IOException, InterruptedException {
+	private void executeCmd1(String[] cmd, String pathOfIm) throws Exception {
 		ProcessBuilder pb = new ProcessBuilder(cmd);
 		pb.directory(new File(pathOfIm));
 		pb.redirectErrorStream(true);
@@ -195,55 +127,72 @@ public class Generater {
 		Generater gn = new Generater();
 		boolean recur = true;
 		int count = 0;
+		int beforeWordCount = gn.getWordOfNum(file);
+//		System.out.println("before word count: " + beforeWordCount);
 		while (recur) {
-			while (true) {
-				boolean recur2 = false;
-				ProcessBuilder pb = new ProcessBuilder(cmd);
-				pb.directory(new File(pathOfIm));
-				pb.redirectErrorStream(true);
-				Process process = pb.start();
-				BufferedReader reader = new BufferedReader(
-						new InputStreamReader(process.getInputStream(), "ISO-8859-1"));
-				String line;
-				while ((line = reader.readLine()) != null) {
-					String nline;
+			count++;
+			System.out.println("try " + count + "ed.. ");
+			ProcessBuilder pb = new ProcessBuilder(cmd);
+			pb.directory(new File(pathOfIm));
+			pb.redirectErrorStream(true);
+			Process process = pb.start();
+			BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(), "ISO-8859-1"));
+			String line;
+			while ((line = reader.readLine()) != null) {
+				String nline;
 
-					nline = new String(line.getBytes("iso-8859-1"), "ksc5601");
-					if (nline.contains("Traceback")) {
-						recur2 = true;
-						break;
-					}
-					lines.add(nline);
-				}
-				process.waitFor();
-				if (recur2)
+				nline = new String(line.getBytes("iso-8859-1"), "ksc5601");
+				if (nline.contains("Traceback") || gn.getLinesWord(lines) > beforeWordCount) {
 					break;
+				}
+				lines.add(nline);
 			}
-			if(count>50||gn.makeOut(lines, file)>3*gn.getWordOfNum(file)/4)
+			process.waitFor();
+			int AfternumOfWord = gn.getWordOfNum(gn.makeOut(lines, file));
+//			System.out.println("current word: " + AfternumOfWord);
+			if ((AfternumOfWord >= 3 * beforeWordCount / 4 || count > 50)) {
 				recur = false;
+			}
 		}
 	}
 
-	private int makeOut(ArrayList<String> lines, File file) throws IOException {
+	private int getLinesWord(ArrayList<String> lines) {
+		int sum = 0;
+		for (String line : lines) {
+			sum += line.length();
+		}
+		return sum;
+	}
+
+	private File makeOut(ArrayList<String> lines, File file) throws IOException {
 		File curDir = new File("result");
 
 		if (!curDir.exists()) {
 			curDir.mkdir();
 		}
 
-		File newFile = new File(curDir.getAbsolutePath() + "/" + file.getName());
+		File newFile = new File(curDir.getAbsolutePath() + File.separator + file.getName());
+		if (newFile.exists()) {
+			if (newFile.delete()) {
+				System.out.println(newFile.getName() + "을 삭제하였습니다.");
+			} else {
+				System.out.println(newFile.getName() + "을 삭제하는데 실패하였습니다.");
+			}
+		} else {
+			System.out.println(newFile.getName() + "을 만들기 시작합니다.");
+		}
 
 		FileWriter fw = new FileWriter(newFile, false);
 
 		for (String txt : lines) {
-			fw.write(txt +" ");
+			fw.write(txt + ". ");
 			fw.flush();
 		}
 
 		fw.close();
 		System.out.println(" " + newFile.getAbsolutePath());
-		
-		return this.getWordOfNum(newFile);
+
+		return newFile;
 
 	}
 
@@ -260,7 +209,7 @@ public class Generater {
 			in.close();
 			////////////////////////////////////////////////////////////////
 		} catch (IOException e) {
-			System.err.println(e); // 에러가 있다면 메시지 출력
+			System.err.println(e); //
 			System.exit(1);
 		}
 		return numOfLine;
