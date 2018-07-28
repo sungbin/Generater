@@ -8,6 +8,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 import org.openkoreantext.processor.KoreanPosJava;
@@ -93,18 +94,18 @@ public class Generater {
 
 			gn.executeCmd1(cmd1, gn.getPathOfIm());
 			File newFile = gn.executeCmd2(cmd2, gn.getPathOfIm(), data);
-
+			
+			//int temp2 = this.getWordOfNum(newFile);
+			
 			/* Editting.. */
 			// (1)
 			List<KoreanTokenJava> oldTokensList = this.makeTokensFromOneLine(data);
-
 			// (2)
 			List<KoreanTokenJava> newTokensList = this.makeTokensFromOneLine(newFile);
 
 			// (3)
 			List<KoreanTokenJava> nonContainedWord = this.findNonContainNoun(oldTokensList, newTokensList);// 들어가지 않은 단어
 																											// 찾는 부분.
-
 			// (4)
 			List<KoreanTokenJava> resultTokenList = this.insertTokenToDuplicatedToken(oldTokensList, nonContainedWord);
 
@@ -112,11 +113,16 @@ public class Generater {
 			StringBuffer sb = new StringBuffer();
 			for (KoreanTokenJava temp : resultTokenList) {
 				sb.append(temp.getText().trim());
-				if (temp.getPos() == KoreanPosJava.Verb)
-					sb.append(" .");
+				//if (temp.getPos() == KoreanPosJava.Verb)
+					//sb.append(". ");
 			}
+			int temp2 = sb.toString().length();
 			this.makeOutFile(newFile, sb.toString());
-
+			
+//			System.out.print("mid n: " + temp2);
+//			System.out.print(", old n: " + this.getWordOfNum(data));
+//			System.out.println(", new n: "+this.getWordOfNum(newFile));
+			
 			/* 			 */
 		}
 
@@ -161,16 +167,18 @@ public class Generater {
 
 		int i = 0;
 		for (KoreanTokenJava word : oldTokensList) {
-			if (word.getPos() == KoreanPosJava.Noun) {
+			if (i < nonContainedWord.size() && word.getPos() == KoreanPosJava.Noun) {
 				if (duplicatedWord.contains(word)) {
 					resultTokenList.add(word);
 					continue;
 				}
 				duplicatedWord.add(word);
-
+				
 				KoreanTokenJava newWord = nonContainedWord.get(i);
 				i++;
-
+//				System.out.print("new Word: " + newWord.getText());
+//				System.out.println(" -> old Word: " + word.getText());
+				
 				resultTokenList.add(newWord);
 			} else {
 				resultTokenList.add(word);
@@ -183,7 +191,10 @@ public class Generater {
 	private List<KoreanTokenJava> findNonContainNoun(List<KoreanTokenJava> oldTokensList,
 			List<KoreanTokenJava> newTokensList) {
 		List<KoreanTokenJava> foundNoun = new ArrayList<KoreanTokenJava>();
-
+		//ArrayList<String> duplicatiedNoun = new ArrayList<String>();
+		HashSet<String> duplicatedNoun = new HashSet<String>();
+		
+		
 		ArrayList<KoreanTokenJava> newNounList = new ArrayList<KoreanTokenJava>();
 		ArrayList<KoreanTokenJava> oldNounList = new ArrayList<KoreanTokenJava>();
 
@@ -199,8 +210,10 @@ public class Generater {
 		}
 
 		for (KoreanTokenJava word : oldNounList) {
-			if (!foundNoun.contains(word) && !newNounList.contains(word)) {
+			if (!duplicatedNoun.contains(word.getText()) && !newNounList.contains(word)) {
+				duplicatedNoun.add(word.getText());
 				foundNoun.add(word);
+//				System.out.println("this: \"" + word.getText()+"\"");
 			}
 		}
 
@@ -317,7 +330,7 @@ public class Generater {
 		FileWriter fw = new FileWriter(newFile, false);
 
 		for (String txt : lines) {
-			fw.write(txt + ". ");
+			fw.write(txt);
 			fw.flush();
 		}
 
