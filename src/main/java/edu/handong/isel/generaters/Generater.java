@@ -2,11 +2,21 @@ package edu.handong.isel.generaters;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.List;
+
+import org.openkoreantext.processor.KoreanPosJava;
+import org.openkoreantext.processor.KoreanTokenJava;
+import org.openkoreantext.processor.OpenKoreanTextProcessorJava;
+import org.openkoreantext.processor.tokenizer.KoreanTokenizer;
+import org.openkoreantext.processor.tokenizer.KoreanTokenizer.KoreanToken;
+
+import scala.collection.Seq;
 
 public class Generater {
 
@@ -73,6 +83,7 @@ public class Generater {
 
 		System.out.println("making from data...");
 		for (File data : datas) {
+
 			// System.out.println("gn.getWordOfNum(data): " +gn.getWordOfNum(data));
 
 			String lineNum = String.valueOf(gn.getWordOfNum(data) / 96);
@@ -81,10 +92,128 @@ public class Generater {
 			String[] cmd2 = { "python", "markov.py", "gen", "temp", lineNum };
 
 			gn.executeCmd1(cmd1, gn.getPathOfIm());
-			gn.executeCmd2(cmd2, gn.getPathOfIm(), data);
+			File newFile = gn.executeCmd2(cmd2, gn.getPathOfIm(), data);
+
+			/* Editting.. */
+			// (1)
+			List<KoreanTokenJava> oldTokensList = this.makeTokensFromOneLine(data);
+
+			// (2)
+			List<KoreanTokenJava> newTokensList = this.makeTokensFromOneLine(newFile);
+
+			// (3)
+			List<KoreanTokenJava> nonContainedWord = this.findNonContainNoun(oldTokensList, newTokensList);// 들어가지 않은 단어
+																											// 찾는 부분.
+
+			// (4)
+			List<KoreanTokenJava> resultTokenList = this.insertTokenToDuplicatedToken(oldTokensList, nonContainedWord);
+
+			// (5)
+			StringBuffer sb = new StringBuffer();
+			for (KoreanTokenJava temp : resultTokenList) {
+				sb.append(temp.getText().trim());
+				if (temp.getPos() == KoreanPosJava.Verb)
+					sb.append(" .");
+			}
+			this.makeOutFile(newFile, sb.toString());
+
+			/* 			 */
 		}
 
 		System.out.println("saved in result");
+	}
+
+	private File makeOutFile(File newFile, String string) throws IOException {
+		if (newFile.exists()) {
+			newFile.delete();
+		}
+		File parent = null;
+		if (!(parent = newFile.getParentFile()).exists()) {
+			parent.mkdirs();
+		}
+
+		if (newFile.exists()) {
+			if (newFile.delete()) {
+				System.out.println(newFile.getName() + "을 삭제하였습니다.");
+			} else {
+				System.out.println(newFile.getName() + "을 삭제하는데 실패하였습니다.");
+			}
+		} else {
+			System.out.println(newFile.getName() + "을 만들기 시작합니다.");
+		}
+
+		FileWriter fw = new FileWriter(newFile, false);
+
+		fw.write(string);
+		fw.flush();
+
+		fw.close();
+		System.out.println(" " + newFile.getAbsolutePath());
+
+		return newFile;
+
+	}
+
+	private List<KoreanTokenJava> insertTokenToDuplicatedToken(List<KoreanTokenJava> oldTokensList,
+			List<KoreanTokenJava> nonContainedWord) {
+		List<KoreanTokenJava> resultTokenList = new ArrayList<KoreanTokenJava>();
+		ArrayList<KoreanTokenJava> duplicatedWord = new ArrayList<KoreanTokenJava>();
+
+		int i = 0;
+		for (KoreanTokenJava word : oldTokensList) {
+			if (word.getPos() == KoreanPosJava.Noun) {
+				if (duplicatedWord.contains(word)) {
+					resultTokenList.add(word);
+					continue;
+				}
+				duplicatedWord.add(word);
+
+				KoreanTokenJava newWord = nonContainedWord.get(i);
+				i++;
+
+				resultTokenList.add(newWord);
+			} else {
+				resultTokenList.add(word);
+			}
+		}
+
+		return resultTokenList;
+	}
+
+	private List<KoreanTokenJava> findNonContainNoun(List<KoreanTokenJava> oldTokensList,
+			List<KoreanTokenJava> newTokensList) {
+		List<KoreanTokenJava> foundNoun = new ArrayList<KoreanTokenJava>();
+
+		ArrayList<KoreanTokenJava> newNounList = new ArrayList<KoreanTokenJava>();
+		ArrayList<KoreanTokenJava> oldNounList = new ArrayList<KoreanTokenJava>();
+
+		for (KoreanTokenJava word : newTokensList) {
+			if (word.getPos() == KoreanPosJava.Noun) {
+				newNounList.add(word);
+			}
+		}
+		for (KoreanTokenJava word : oldTokensList) {
+			if (word.getPos() == KoreanPosJava.Noun) {
+				oldNounList.add(word);
+			}
+		}
+
+		for (KoreanTokenJava word : oldNounList) {
+			if (!foundNoun.contains(word) && !newNounList.contains(word)) {
+				foundNoun.add(word);
+			}
+		}
+
+		return foundNoun;
+	}
+
+	private List<KoreanTokenJava> makeTokensFromOneLine(File data) throws IOException {
+		Seq<KoreanToken> oldTokens = null;
+		String extractedLine = this.extractLineFromFile(data);
+		oldTokens = this.tokenization(extractedLine);
+		List<KoreanTokenJava> tokenList = OpenKoreanTextProcessorJava.tokensToJavaKoreanTokenList(oldTokens);
+
+		return tokenList;
 	}
 
 	private int getWordOfNum(File data) {
@@ -122,13 +251,14 @@ public class Generater {
 
 	}
 
-	private void executeCmd2(String[] cmd, String pathOfIm, File file) throws IOException, InterruptedException {
+	private File executeCmd2(String[] cmd, String pathOfIm, File file) throws IOException, InterruptedException {
 		ArrayList<String> lines = new ArrayList<String>();
 		Generater gn = new Generater();
 		boolean recur = true;
 		int count = 0;
 		int beforeWordCount = gn.getWordOfNum(file);
-//		System.out.println("before word count: " + beforeWordCount);
+		// System.out.println("before word count: " + beforeWordCount);
+		File newFile = null;
 		while (recur) {
 			count++;
 			System.out.println("try " + count + "ed.. ");
@@ -148,12 +278,14 @@ public class Generater {
 				lines.add(nline);
 			}
 			process.waitFor();
-			int AfternumOfWord = gn.getWordOfNum(gn.makeOut(lines, file));
-//			System.out.println("current word: " + AfternumOfWord);
+			newFile = gn.makeOut(lines, file);
+			int AfternumOfWord = gn.getWordOfNum(newFile);
+			// System.out.println("current word: " + AfternumOfWord);
 			if ((AfternumOfWord >= 3 * beforeWordCount / 4 || count > 50)) {
 				recur = false;
 			}
 		}
+		return newFile;
 	}
 
 	private int getLinesWord(ArrayList<String> lines) {
@@ -213,5 +345,29 @@ public class Generater {
 			System.exit(1);
 		}
 		return numOfLine;
+	}
+
+	private String extractLineFromFile(File data) throws IOException {
+		String extractedLine = "";
+
+		FileInputStream fileInputStream = new FileInputStream(data);
+		InputStreamReader inputStreamReader = new InputStreamReader(fileInputStream, "UTF-8");
+		BufferedReader reader = new BufferedReader(inputStreamReader);
+
+		String line = "";
+		while ((line = reader.readLine()) != null) {
+			extractedLine += (line + " ");
+		}
+
+		return extractedLine;
+	}
+
+	private Seq<KoreanTokenizer.KoreanToken> tokenization(String line) {
+		CharSequence normalized = OpenKoreanTextProcessorJava.normalize(line);
+		return OpenKoreanTextProcessorJava.tokenize(normalized);
+		// Seq<KoreanTokenizer.KoreanToken> tokens =
+		// OpenKoreanTextProcessorJava.tokenize(normalized);
+		// return OpenKoreanTextProcessorJava.tokensToJavaStringList(tokens);
+
 	}
 }
