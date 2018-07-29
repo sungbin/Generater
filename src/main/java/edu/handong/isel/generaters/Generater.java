@@ -1,12 +1,16 @@
 package edu.handong.isel.generaters;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -94,50 +98,85 @@ public class Generater {
 
 			gn.executeCmd1(cmd1, gn.getPathOfIm());
 			File newFile = gn.executeCmd2(cmd2, gn.getPathOfIm(), data);
-			
-			//int temp2 = this.getWordOfNum(newFile);
-			
+
 			/* Editting.. */
 			// (1)
 			List<KoreanTokenJava> oldTokensList = this.makeTokensFromOneLine(data);
+			
 			// (2)
 			List<KoreanTokenJava> newTokensList = this.makeTokensFromOneLine(newFile);
+			
+			
+			
+//			BufferedWriter fw = new BufferedWriter(new FileWriter(new File("test.txt"), false));
+//            
+//            // 파일안에 문자열 쓰기
+//			for(KoreanTokenJava temp : newTokensList) {
+//	            fw.write(temp.getText()+"\n");
+//			}
+//            fw.flush();
+// 
+//            // 객체 닫기
+//            fw.close();
 
 			// (3)
 			List<KoreanTokenJava> nonContainedWord = this.findNonContainNoun(oldTokensList, newTokensList);// 들어가지 않은 단어
-																											// 찾는 부분.
+			// 찾는 부분.
 			// (4)
-			List<KoreanTokenJava> resultTokenList = this.insertTokenToDuplicatedToken(oldTokensList, nonContainedWord);
+			List<KoreanTokenJava> resultTokenList = this.insertTokenToDuplicatedToken(newTokensList, nonContainedWord);
 
 			// (5)
 			StringBuffer sb = new StringBuffer();
-			for (KoreanTokenJava temp : resultTokenList) {
-				sb.append(temp.getText().trim());
-				//if (temp.getPos() == KoreanPosJava.Verb)
-					//sb.append(". ");
+			int i;
+
+			sb.append(resultTokenList.get(0).getText());
+			for (i = 1; i < resultTokenList.size(); i++) {
+				KoreanTokenJava first = resultTokenList.get(i - 1);
+				KoreanTokenJava second = resultTokenList.get(i);
+
+				if ((first.getPos() == KoreanPosJava.Noun) && (second.getPos() == KoreanPosJava.Noun))
+					sb.append(" ");
+				else if (first.getPos() == KoreanPosJava.Josa) {
+					sb.append(" ");
+				} else if (first.getPos() == KoreanPosJava.Adjective) {
+					sb.append(" ");
+				} else if (first.getPos() == KoreanPosJava.Verb) {
+					sb.append(" ");
+				} else if (first.getPos() == KoreanPosJava.Adverb) {
+					sb.append(" ");
+				}
+
+				sb.append(second.getText());
+
 			}
-			int temp2 = sb.toString().length();
-			this.makeOutFile(newFile, sb.toString());
-			
-//			System.out.print("mid n: " + temp2);
-//			System.out.print(", old n: " + this.getWordOfNum(data));
-//			System.out.println(", new n: "+this.getWordOfNum(newFile));
-			
+			if (newFile.exists()) {
+				if (newFile.delete()) {
+					System.out.println("파일삭제 성공");
+				} else {
+					System.out.println("파일삭제 실패");
+				}
+			} else {
+				System.out.println("파일이 존재하지 않습니다.");
+			}
+
+			 this.makeOutFile(newFile, sb.toString());
+
 			/* 			 */
 		}
 
 		System.out.println("saved in result");
+
 	}
 
 	private File makeOutFile(File newFile, String string) throws IOException {
 		if (newFile.exists()) {
 			newFile.delete();
+		} else {
+			File parent = null;
+			if (!(parent = newFile.getParentFile()).exists()) {
+				parent.mkdirs();
+			}
 		}
-		File parent = null;
-		if (!(parent = newFile.getParentFile()).exists()) {
-			parent.mkdirs();
-		}
-
 		if (newFile.exists()) {
 			if (newFile.delete()) {
 				System.out.println(newFile.getName() + "을 삭제하였습니다.");
@@ -148,12 +187,34 @@ public class Generater {
 			System.out.println(newFile.getName() + "을 만들기 시작합니다.");
 		}
 
-		FileWriter fw = new FileWriter(newFile, false);
+		// String[] charSet = { "utf-8", "euc-kr", "ksc5601", "iso-8859-1",
+		// "x-windows-949" };
+		//
+		// int i;
+		// for(String type : charSet) {
+		//
+		// File nnFile = new File(newFile.getAbsolutePath()+type+".txt");
+		//
+		// FileOutputStream fileOutputStream = new FileOutputStream(nnFile);
+		// OutputStreamWriter OutputStreamWriter = new
+		// OutputStreamWriter(fileOutputStream, type);
+		// BufferedWriter bf = new BufferedWriter(OutputStreamWriter);
+		//
+		// bf.write(string);
+		// bf.flush();
+		//
+		// bf.close();
+		// }
 
-		fw.write(string);
-		fw.flush();
-
-		fw.close();
+		FileOutputStream fileOutputStream = new FileOutputStream(newFile);
+		OutputStreamWriter OutputStreamWriter = new OutputStreamWriter(fileOutputStream, "UTF-8");
+		BufferedWriter bf = new BufferedWriter(OutputStreamWriter);
+		//
+		// FileWriter bf = new FileWriter(newFile, false);
+		bf.write(string);
+		bf.flush();
+		//
+		bf.close();
 		System.out.println(" " + newFile.getAbsolutePath());
 
 		return newFile;
@@ -162,39 +223,43 @@ public class Generater {
 
 	private List<KoreanTokenJava> insertTokenToDuplicatedToken(List<KoreanTokenJava> oldTokensList,
 			List<KoreanTokenJava> nonContainedWord) {
-		List<KoreanTokenJava> resultTokenList = new ArrayList<KoreanTokenJava>();
+		// List<KoreanTokenJava> resultTokenList = new ArrayList<KoreanTokenJava>();
 		ArrayList<KoreanTokenJava> duplicatedWord = new ArrayList<KoreanTokenJava>();
 
 		int i = 0;
+		int j = 0;
 		for (KoreanTokenJava word : oldTokensList) {
 			if (i < nonContainedWord.size() && word.getPos() == KoreanPosJava.Noun) {
 				if (duplicatedWord.contains(word)) {
-					resultTokenList.add(word);
+					oldTokensList.set(j, word);
+					// resultTokenList.add(word);
 					continue;
 				}
 				duplicatedWord.add(word);
-				
+
 				KoreanTokenJava newWord = nonContainedWord.get(i);
 				i++;
-//				System.out.print("new Word: " + newWord.getText());
-//				System.out.println(" -> old Word: " + word.getText());
-				
-				resultTokenList.add(newWord);
+				// System.out.print("new Word: " + newWord.getText());
+				// System.out.println(" -> old Word: " + word.getText());
+
+				oldTokensList.set(j, word);
+				// resultTokenList.add(newWord);
 			} else {
-				resultTokenList.add(word);
+				oldTokensList.set(j, word);
+				// resultTokenList.add(word);
 			}
+			j++;
 		}
 
-		return resultTokenList;
+		return oldTokensList;
 	}
 
 	private List<KoreanTokenJava> findNonContainNoun(List<KoreanTokenJava> oldTokensList,
 			List<KoreanTokenJava> newTokensList) {
 		List<KoreanTokenJava> foundNoun = new ArrayList<KoreanTokenJava>();
-		//ArrayList<String> duplicatiedNoun = new ArrayList<String>();
+		// ArrayList<String> duplicatiedNoun = new ArrayList<String>();
 		HashSet<String> duplicatedNoun = new HashSet<String>();
-		
-		
+
 		ArrayList<KoreanTokenJava> newNounList = new ArrayList<KoreanTokenJava>();
 		ArrayList<KoreanTokenJava> oldNounList = new ArrayList<KoreanTokenJava>();
 
@@ -213,7 +278,7 @@ public class Generater {
 			if (!duplicatedNoun.contains(word.getText()) && !newNounList.contains(word)) {
 				duplicatedNoun.add(word.getText());
 				foundNoun.add(word);
-//				System.out.println("this: \"" + word.getText()+"\"");
+				// System.out.println("this: \"" + word.getText()+"\"");
 			}
 		}
 
@@ -364,8 +429,9 @@ public class Generater {
 		String extractedLine = "";
 
 		FileInputStream fileInputStream = new FileInputStream(data);
-		InputStreamReader inputStreamReader = new InputStreamReader(fileInputStream, "UTF-8");
+		InputStreamReader inputStreamReader = new InputStreamReader(fileInputStream, "euc-kr");
 		BufferedReader reader = new BufferedReader(inputStreamReader);
+//		BufferedReader reader  =  new BufferedReader(new InputStreamReader(new FileInputStream(file),"euc-kr"));
 
 		String line = "";
 		while ((line = reader.readLine()) != null) {
