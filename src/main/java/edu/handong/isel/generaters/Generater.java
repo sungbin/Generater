@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -14,6 +15,7 @@ import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Scanner;
 
 import org.openkoreantext.processor.KoreanPosJava;
 import org.openkoreantext.processor.KoreanTokenJava;
@@ -24,6 +26,8 @@ import org.openkoreantext.processor.tokenizer.KoreanTokenizer.KoreanToken;
 import scala.collection.Seq;
 
 public class Generater {
+
+	ArrayList<String> exceptionWord;
 
 	public String getPathOfIm() {
 		return pathOfIm;
@@ -62,19 +66,41 @@ public class Generater {
 
 	}
 
+	public void setStringFromFile(File file, String txt) throws IOException {
+
+		BufferedWriter fw = new BufferedWriter(new FileWriter(file, false));
+
+		// 파일안에 문자열 쓰기
+		fw.write(txt);
+		fw.flush();
+
+		// 객체 닫기
+		fw.close();
+	}
+
 	private void run(String[] args) throws Exception {
 		Generater gn = new Generater();
 
 		System.out.println("start Program from... ");
 		System.out.println(System.getProperty("user.dir"));
 
-		gn.setDir("Data");
+		gn.setDir("data");
+		// gn.setDir("temp");
 		gn.setPathOfIm("markov-text");
 
 		File dirFile = new File(gn.getDir());
 		if (!dirFile.exists()) {
 			dirFile.mkdirs();
 		}
+
+		// Scanner in = new Scanner(System.in);
+		// int j = 0;
+		// String line = "";
+		// System.out.print("Push Text: ");
+		// while((line = in.nextLine()) != null) {
+		//
+		// }
+
 		File[] fileList = dirFile.listFiles();
 		ArrayList<File> datas = new ArrayList<File>();
 
@@ -102,29 +128,31 @@ public class Generater {
 			/* Editting.. */
 			// (1)
 			List<KoreanTokenJava> oldTokensList = this.makeTokensFromOneLine(data);
-			
+
 			// (2)
 			List<KoreanTokenJava> newTokensList = this.makeTokensFromOneLine(newFile);
-			
-			
-			
-//			BufferedWriter fw = new BufferedWriter(new FileWriter(new File("test.txt"), false));
-//            
-//            // 파일안에 문자열 쓰기
-//			for(KoreanTokenJava temp : newTokensList) {
-//	            fw.write(temp.getText()+"\n");
-//			}
-//            fw.flush();
-// 
-//            // 객체 닫기
-//            fw.close();
+
+			// BufferedWriter fw = new BufferedWriter(new FileWriter(new File("test.txt"),
+			// false));
+			//
+			// // 파일안에 문자열 쓰기
+			// for(KoreanTokenJava temp : newTokensList) {
+			// fw.write(temp.getText()+"\n");
+			// }
+			// fw.flush();
+			//
+			// // 객체 닫기
+			// fw.close();
 
 			// (3)
 			List<KoreanTokenJava> nonContainedWord = this.findNonContainNoun(oldTokensList, newTokensList);// 들어가지 않은 단어
 			// 찾는 부분.
 			// (4)
 			List<KoreanTokenJava> resultTokenList = this.insertTokenToDuplicatedToken(newTokensList, nonContainedWord);
-
+			
+//			for(KoreanTokenJava word : resultTokenList) {
+//			System.out.println(word.getText()); }
+			
 			// (5)
 			StringBuffer sb = new StringBuffer();
 			int i;
@@ -151,15 +179,15 @@ public class Generater {
 			}
 			if (newFile.exists()) {
 				if (newFile.delete()) {
-//					System.out.println("파일삭제 성공");
+					// System.out.println("파일삭제 성공");
 				} else {
-//					System.out.println("파일삭제 실패");
+					// System.out.println("파일삭제 실패");
 				}
 			} else {
-//				System.out.println("파일이 존재하지 않습니다.");
+				// System.out.println("파일이 존재하지 않습니다.");
 			}
 
-			 this.makeOutFile(newFile, sb.toString());
+			this.makeOutFile(newFile, sb.toString());
 
 			/* 			 */
 		}
@@ -179,12 +207,12 @@ public class Generater {
 		}
 		if (newFile.exists()) {
 			if (newFile.delete()) {
-//				System.out.println(newFile.getName() + "을 삭제하였습니다.");
+				// System.out.println(newFile.getName() + "을 삭제하였습니다.");
 			} else {
-//				System.out.println(newFile.getName() + "을 삭제하는데 실패하였습니다.");
+				// System.out.println(newFile.getName() + "을 삭제하는데 실패하였습니다.");
 			}
 		} else {
-//			System.out.println(newFile.getName() + "을 만들기 시작합니다.");
+			// System.out.println(newFile.getName() + "을 만들기 시작합니다.");
 		}
 
 		// String[] charSet = { "utf-8", "euc-kr", "ksc5601", "iso-8859-1",
@@ -223,16 +251,19 @@ public class Generater {
 
 	private List<KoreanTokenJava> insertTokenToDuplicatedToken(List<KoreanTokenJava> oldTokensList,
 			List<KoreanTokenJava> nonContainedWord) {
-		// List<KoreanTokenJava> resultTokenList = new ArrayList<KoreanTokenJava>();
+		List<KoreanTokenJava> resultTokenList = new ArrayList<KoreanTokenJava>();
 		ArrayList<KoreanTokenJava> duplicatedWord = new ArrayList<KoreanTokenJava>();
 
+//		for (KoreanTokenJava word : nonContainedWord) {
+//			System.out.println(word.getText());
+//		}
+
 		int i = 0;
-		int j = 0;
+//		System.out.println("size: "+nonContainedWord.size());
 		for (KoreanTokenJava word : oldTokensList) {
 			if (i < nonContainedWord.size() && word.getPos() == KoreanPosJava.Noun) {
 				if (duplicatedWord.contains(word)) {
-					oldTokensList.set(j, word);
-					// resultTokenList.add(word);
+					resultTokenList.add(word);
 					continue;
 				}
 				duplicatedWord.add(word);
@@ -241,17 +272,14 @@ public class Generater {
 				i++;
 				// System.out.print("new Word: " + newWord.getText());
 				// System.out.println(" -> old Word: " + word.getText());
-
-				oldTokensList.set(j, word);
-				// resultTokenList.add(newWord);
+				resultTokenList.add(newWord);
 			} else {
-				oldTokensList.set(j, word);
-				// resultTokenList.add(word);
+				resultTokenList.add(word);
 			}
-			j++;
 		}
+//		System.out.println("i: " + i);
 
-		return oldTokensList;
+		return resultTokenList;
 	}
 
 	private List<KoreanTokenJava> findNonContainNoun(List<KoreanTokenJava> oldTokensList,
@@ -271,6 +299,10 @@ public class Generater {
 		for (KoreanTokenJava word : oldTokensList) {
 			if (word.getPos() == KoreanPosJava.Noun) {
 				oldNounList.add(word);
+				// System.out.println("Noun: " + word.getText());
+			} else {
+				// System.out.println("un-Noun: " + word.getText() + ", type: " +
+				// word.getPos());
 			}
 		}
 
@@ -384,12 +416,12 @@ public class Generater {
 		File newFile = new File(curDir.getAbsolutePath() + File.separator + file.getName());
 		if (newFile.exists()) {
 			if (newFile.delete()) {
-//				System.out.println(newFile.getName() + "을 삭제하였습니다.");
+				// System.out.println(newFile.getName() + "을 삭제하였습니다.");
 			} else {
-//				System.out.println(newFile.getName() + "을 삭제하는데 실패하였습니다.");
+				// System.out.println(newFile.getName() + "을 삭제하는데 실패하였습니다.");
 			}
 		} else {
-//			System.out.println(newFile.getName() + "을 만들기 시작합니다.");
+			// System.out.println(newFile.getName() + "을 만들기 시작합니다.");
 		}
 
 		FileWriter fw = new FileWriter(newFile, false);
@@ -430,9 +462,10 @@ public class Generater {
 
 		FileInputStream fileInputStream = new FileInputStream(data);
 //		InputStreamReader inputStreamReader = new InputStreamReader(fileInputStream, "UTF-8");
-		InputStreamReader inputStreamReader = new InputStreamReader(fileInputStream, "euc-kr");
+		 InputStreamReader inputStreamReader = new InputStreamReader(fileInputStream, "euc-kr");
 		BufferedReader reader = new BufferedReader(inputStreamReader);
-//		BufferedReader reader  =  new BufferedReader(new InputStreamReader(new FileInputStream(file),"euc-kr"));
+		// BufferedReader reader = new BufferedReader(new InputStreamReader(new
+		// FileInputStream(file),"euc-kr"));
 
 		String line = "";
 		while ((line = reader.readLine()) != null) {
