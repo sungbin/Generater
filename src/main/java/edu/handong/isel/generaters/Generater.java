@@ -22,6 +22,7 @@ import org.openkoreantext.processor.KoreanTokenJava;
 import org.openkoreantext.processor.OpenKoreanTextProcessorJava;
 import org.openkoreantext.processor.tokenizer.KoreanTokenizer;
 import org.openkoreantext.processor.tokenizer.KoreanTokenizer.KoreanToken;
+import org.openkoreantext.processor.util.KoreanPos;
 
 import scala.collection.Seq;
 
@@ -54,6 +55,7 @@ public class Generater {
 
 		try {
 			gn.run(args);
+			Thread.sleep(2000);
 		} catch (Exception e) {
 			e.printStackTrace();
 			try {
@@ -127,32 +129,35 @@ public class Generater {
 
 			/* Editting.. */
 			// (1)
-			List<KoreanTokenJava> oldTokensList = this.makeTokensFromOneLine(data);
+			List<KoreanTokenJava> oldTokensList = this.makeTokensFromOneLine2(data);
+			BufferedWriter fw = new BufferedWriter(new FileWriter(new File("test.txt"), false));
+
+			// FileOutputStream fileOutputStream = new FileOutputStream(new
+			// File("test.txt"));
+			// OutputStreamWriter OutputStreamWriter = new
+			// OutputStreamWriter(fileOutputStream, "UTF-8");
+			// BufferedWriter fw = new BufferedWriter(OutputStreamWriter);
+
+			for (KoreanTokenJava temp : oldTokensList) {
+				if (temp.getPos() == KoreanPosJava.Noun)
+					fw.write(temp.getText() + "\n");
+				fw.flush();
+			}
+			// 객체 닫기
+			fw.close();
 
 			// (2)
 			List<KoreanTokenJava> newTokensList = this.makeTokensFromOneLine(newFile);
 
-			// BufferedWriter fw = new BufferedWriter(new FileWriter(new File("test.txt"),
-			// false));
-			//
-			// // 파일안에 문자열 쓰기
-			// for(KoreanTokenJava temp : newTokensList) {
-			// fw.write(temp.getText()+"\n");
-			// }
-			// fw.flush();
-			//
-			// // 객체 닫기
-			// fw.close();
-
 			// (3)
 			List<KoreanTokenJava> nonContainedWord = this.findNonContainNoun(oldTokensList, newTokensList);// 들어가지 않은 단어
-			// 찾는 부분.
+
 			// (4)
 			List<KoreanTokenJava> resultTokenList = this.insertTokenToDuplicatedToken(newTokensList, nonContainedWord);
-			
-//			for(KoreanTokenJava word : resultTokenList) {
-//			System.out.println(word.getText()); }
-			
+
+			// for(KoreanTokenJava word : resultTokenList) {
+			// System.out.println(word.getText()); }
+
 			// (5)
 			StringBuffer sb = new StringBuffer();
 			int i;
@@ -179,14 +184,19 @@ public class Generater {
 			}
 			if (newFile.exists()) {
 				if (newFile.delete()) {
-					// System.out.println("파일삭제 성공");
+					System.out.println("success to delete File!");
 				} else {
-					// System.out.println("파일삭제 실패");
+					System.out.println("fail to delete File!");
 				}
 			} else {
-				// System.out.println("파일이 존재하지 않습니다.");
+				System.out.println("file not exist");
 			}
 
+			// File nnFile = new File(
+			// newFile.getParentFile().getAbsolutePath() + File.separator + "2" +
+			// newFile.getName());
+
+			// this.makeOutFile(nnFile, sb.toString());
 			this.makeOutFile(newFile, sb.toString());
 
 			/* 			 */
@@ -215,25 +225,6 @@ public class Generater {
 			// System.out.println(newFile.getName() + "을 만들기 시작합니다.");
 		}
 
-		// String[] charSet = { "utf-8", "euc-kr", "ksc5601", "iso-8859-1",
-		// "x-windows-949" };
-		//
-		// int i;
-		// for(String type : charSet) {
-		//
-		// File nnFile = new File(newFile.getAbsolutePath()+type+".txt");
-		//
-		// FileOutputStream fileOutputStream = new FileOutputStream(nnFile);
-		// OutputStreamWriter OutputStreamWriter = new
-		// OutputStreamWriter(fileOutputStream, type);
-		// BufferedWriter bf = new BufferedWriter(OutputStreamWriter);
-		//
-		// bf.write(string);
-		// bf.flush();
-		//
-		// bf.close();
-		// }
-
 		FileOutputStream fileOutputStream = new FileOutputStream(newFile);
 		OutputStreamWriter OutputStreamWriter = new OutputStreamWriter(fileOutputStream, "UTF-8");
 		BufferedWriter bf = new BufferedWriter(OutputStreamWriter);
@@ -254,12 +245,12 @@ public class Generater {
 		List<KoreanTokenJava> resultTokenList = new ArrayList<KoreanTokenJava>();
 		ArrayList<KoreanTokenJava> duplicatedWord = new ArrayList<KoreanTokenJava>();
 
-//		for (KoreanTokenJava word : nonContainedWord) {
-//			System.out.println(word.getText());
-//		}
+		// for (KoreanTokenJava word : nonContainedWord) {
+		// System.out.println(word.getText());
+		// }
 
 		int i = 0;
-//		System.out.println("size: "+nonContainedWord.size());
+		// System.out.println("size: "+nonContainedWord.size());
 		for (KoreanTokenJava word : oldTokensList) {
 			if (i < nonContainedWord.size() && word.getPos() == KoreanPosJava.Noun) {
 				if (duplicatedWord.contains(word)) {
@@ -277,7 +268,7 @@ public class Generater {
 				resultTokenList.add(word);
 			}
 		}
-//		System.out.println("i: " + i);
+		// System.out.println("i: " + i);
 
 		return resultTokenList;
 	}
@@ -320,6 +311,15 @@ public class Generater {
 	private List<KoreanTokenJava> makeTokensFromOneLine(File data) throws IOException {
 		Seq<KoreanToken> oldTokens = null;
 		String extractedLine = this.extractLineFromFile(data);
+		oldTokens = this.tokenization(extractedLine);
+		List<KoreanTokenJava> tokenList = OpenKoreanTextProcessorJava.tokensToJavaKoreanTokenList(oldTokens);
+
+		return tokenList;
+	}
+
+	private List<KoreanTokenJava> makeTokensFromOneLine2(File data) throws IOException {
+		Seq<KoreanToken> oldTokens = null;
+		String extractedLine = this.extractLineFromFile2(data);
 		oldTokens = this.tokenization(extractedLine);
 		List<KoreanTokenJava> tokenList = OpenKoreanTextProcessorJava.tokensToJavaKoreanTokenList(oldTokens);
 
@@ -457,12 +457,30 @@ public class Generater {
 		return numOfLine;
 	}
 
+	private String extractLineFromFile2(File data) throws IOException {
+		String extractedLine = "";
+
+		FileInputStream fileInputStream = new FileInputStream(data);
+		InputStreamReader inputStreamReader = new InputStreamReader(fileInputStream, "UTF-8");
+		// InputStreamReader inputStreamReader = new InputStreamReader(fileInputStream,
+		// "euc-kr");
+		BufferedReader reader = new BufferedReader(inputStreamReader);
+
+		String line = "";
+		while ((line = reader.readLine()) != null) {
+			extractedLine += (line + " ");
+		}
+
+		return extractedLine;
+	}
+
 	private String extractLineFromFile(File data) throws IOException {
 		String extractedLine = "";
 
 		FileInputStream fileInputStream = new FileInputStream(data);
-//		InputStreamReader inputStreamReader = new InputStreamReader(fileInputStream, "UTF-8");
-		 InputStreamReader inputStreamReader = new InputStreamReader(fileInputStream, "euc-kr");
+		// InputStreamReader inputStreamReader = new InputStreamReader(fileInputStream,
+		// "UTF-8");
+		InputStreamReader inputStreamReader = new InputStreamReader(fileInputStream, "euc-kr");
 		BufferedReader reader = new BufferedReader(inputStreamReader);
 		// BufferedReader reader = new BufferedReader(new InputStreamReader(new
 		// FileInputStream(file),"euc-kr"));
