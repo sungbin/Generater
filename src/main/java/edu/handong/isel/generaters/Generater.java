@@ -151,12 +151,12 @@ public class Generater {
 			}
 			if (newFile.exists()) {
 				if (newFile.delete()) {
-					System.out.println("파일삭제 성공");
+//					System.out.println("파일삭제 성공");
 				} else {
-					System.out.println("파일삭제 실패");
+//					System.out.println("파일삭제 실패");
 				}
 			} else {
-				System.out.println("파일이 존재하지 않습니다.");
+//				System.out.println("파일이 존재하지 않습니다.");
 			}
 
 			 this.makeOutFile(newFile, sb.toString());
@@ -179,12 +179,12 @@ public class Generater {
 		}
 		if (newFile.exists()) {
 			if (newFile.delete()) {
-				System.out.println(newFile.getName() + "을 삭제하였습니다.");
+//				System.out.println(newFile.getName() + "을 삭제하였습니다.");
 			} else {
-				System.out.println(newFile.getName() + "을 삭제하는데 실패하였습니다.");
+//				System.out.println(newFile.getName() + "을 삭제하는데 실패하였습니다.");
 			}
 		} else {
-			System.out.println(newFile.getName() + "을 만들기 시작합니다.");
+//			System.out.println(newFile.getName() + "을 만들기 시작합니다.");
 		}
 
 		// String[] charSet = { "utf-8", "euc-kr", "ksc5601", "iso-8859-1",
@@ -384,12 +384,12 @@ public class Generater {
 		File newFile = new File(curDir.getAbsolutePath() + File.separator + file.getName());
 		if (newFile.exists()) {
 			if (newFile.delete()) {
-				System.out.println(newFile.getName() + "을 삭제하였습니다.");
+//				System.out.println(newFile.getName() + "을 삭제하였습니다.");
 			} else {
-				System.out.println(newFile.getName() + "을 삭제하는데 실패하였습니다.");
+//				System.out.println(newFile.getName() + "을 삭제하는데 실패하였습니다.");
 			}
 		} else {
-			System.out.println(newFile.getName() + "을 만들기 시작합니다.");
+//			System.out.println(newFile.getName() + "을 만들기 시작합니다.");
 		}
 
 		FileWriter fw = new FileWriter(newFile, false);
@@ -429,6 +429,7 @@ public class Generater {
 		String extractedLine = "";
 
 		FileInputStream fileInputStream = new FileInputStream(data);
+//		InputStreamReader inputStreamReader = new InputStreamReader(fileInputStream, "UTF-8");
 		InputStreamReader inputStreamReader = new InputStreamReader(fileInputStream, "euc-kr");
 		BufferedReader reader = new BufferedReader(inputStreamReader);
 //		BufferedReader reader  =  new BufferedReader(new InputStreamReader(new FileInputStream(file),"euc-kr"));
