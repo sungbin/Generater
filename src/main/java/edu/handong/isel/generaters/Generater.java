@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Scanner;
+import java.util.StringTokenizer;
 
 import org.openkoreantext.processor.KoreanPosJava;
 import org.openkoreantext.processor.KoreanTokenJava;
@@ -128,23 +129,23 @@ public class Generater {
 			File newFile = gn.executeCmd2(cmd2, gn.getPathOfIm(), data);
 
 			/* Editting.. */
+			
+			
+			
 			// (1)
 			List<KoreanTokenJava> oldTokensList = this.makeTokensFromOneLine2(data);
+			//ArrayList<String> keywordList = this.extractToken(oldTokensList);
 			BufferedWriter fw = new BufferedWriter(new FileWriter(new File("test.txt"), false));
-
-			// FileOutputStream fileOutputStream = new FileOutputStream(new
-			// File("test.txt"));
-			// OutputStreamWriter OutputStreamWriter = new
-			// OutputStreamWriter(fileOutputStream, "UTF-8");
-			// BufferedWriter fw = new BufferedWriter(OutputStreamWriter);
-
+			
 			for (KoreanTokenJava temp : oldTokensList) {
 				if (temp.getPos() == KoreanPosJava.Noun)
 					fw.write(temp.getText() + "\n");
 				fw.flush();
 			}
-			// 객체 닫기
 			fw.close();
+			
+			
+			
 
 			// (2)
 			List<KoreanTokenJava> newTokensList = this.makeTokensFromOneLine(newFile);
@@ -206,6 +207,28 @@ public class Generater {
 
 	}
 
+	private ArrayList<String> getDiviedString(String str) {
+		StringTokenizer tokens = new StringTokenizer(str);
+		
+		int i;
+		ArrayList<String> list = new ArrayList<String>();
+		while(tokens.hasMoreTokens()) {
+			//System.out.println(tokens.nextToken());
+			list.add(tokens.nextToken());
+		}
+		return list;
+	}
+
+	private ArrayList<String> extractToken(List<KoreanTokenJava> newTokensList) {
+		ArrayList<String> keywords = new ArrayList<String>();
+		for(KoreanTokenJava token : newTokensList) {
+			if(token.getPos() == KoreanPosJava.Noun) {
+				keywords.add(token.getText());
+			}
+		}
+		return keywords;
+	}
+
 	private File makeOutFile(File newFile, String string) throws IOException {
 		if (newFile.exists()) {
 			newFile.delete();
@@ -248,7 +271,9 @@ public class Generater {
 		// for (KoreanTokenJava word : nonContainedWord) {
 		// System.out.println(word.getText());
 		// }
-
+		
+		new KoreanTokenJava(dir, null, 0, 0, false, dir);
+		
 		int i = 0;
 		// System.out.println("size: "+nonContainedWord.size());
 		for (KoreanTokenJava word : oldTokensList) {
@@ -474,13 +499,15 @@ public class Generater {
 		return extractedLine;
 	}
 
+	
+	/* This need for Debug */
 	private String extractLineFromFile(File data) throws IOException {
 		String extractedLine = "";
 
 		FileInputStream fileInputStream = new FileInputStream(data);
-		// InputStreamReader inputStreamReader = new InputStreamReader(fileInputStream,
-		// "UTF-8");
-		InputStreamReader inputStreamReader = new InputStreamReader(fileInputStream, "euc-kr");
+		 InputStreamReader inputStreamReader = new InputStreamReader(fileInputStream,
+		 "UTF-8");
+//		InputStreamReader inputStreamReader = new InputStreamReader(fileInputStream, "euc-kr");
 		BufferedReader reader = new BufferedReader(inputStreamReader);
 		// BufferedReader reader = new BufferedReader(new InputStreamReader(new
 		// FileInputStream(file),"euc-kr"));
@@ -495,6 +522,12 @@ public class Generater {
 
 	private Seq<KoreanTokenizer.KoreanToken> tokenization(String line) {
 		CharSequence normalized = OpenKoreanTextProcessorJava.normalize(line);
+		
+		System.out.println(normalized.toString());
+		
+		String str = "고등영어과외 고등수학과외 중등영어과외 중등수학과외 기초과외 초등영어과외 초등수학과외 초5영어과외 초3 초4 초5 초6 중1 중2 중3 고1 고2 고3 내신 선행 족집게 이과 문과 수능 시험 일대일 과외쌤 소개 추천 찾기 중간고사 기말고사 아파트 마을 1등급 2등급 3등급 4등급 5등급 6등급 수능시험 시험범위 이공계 공부잘하는법 성적올리기 성적잘올리는법 잘하는법 책임감있는 과외선생님 선생님 알려주세요 소개해주세요 추천해주세요 소개 추천 찾기 초등학교 중학교 고등학교 학생은 공부 수포자 영포자 내신공부 6월모의고사 6월모평 9월모의고사 9월모평 내신공부 내신준비 수능대비 기말대비 중간대비 도와주세요 신뢰할 수 있는 언어영역 수리영역 외국어영역 사탐 과탐 사회 과학 생명과학 화학 물리 지구과학 세계지리 한국지리 윤리 근현대사 제2외국어 생활과윤리 사회문화 윤리와사상 동아시아사 법과정치 경제 역량 꾸준하게 잘가르치는 책임감있는 유명한 학생 수험생 재수생 예습 복습 선행학습 전문 일대일 소개 추천 찾기 어디서 받나요? 통합과학 통합사회 한국사 3월 6월 9월 11월 학평 모평 모의고사 수능 시험 평가 내신 입시 대입 7등급 8등급 구하기 연결 중개 대학생 알바 성적올리는법 전교1등 공부습관 몰입 집중 집중력 성적상승 성적하락 공부 수능대비 언어영역 외국어영역 수리영역 도와주세요 해주세요 잘하는법 공부방법 실업계 대학 인문계 이공계 수능범위 영수 교육청 수능대박 시험대박 어떻게해야하나요 공부하는습관 상위권 하위권 일대일 눈높이수업 기출문제 기출 내신문제 교과서 국어 사탐 과탐";
+		ArrayList<String> keywordList = this.getDiviedString(str);
+		
 		return OpenKoreanTextProcessorJava.tokenize(normalized);
 		// Seq<KoreanTokenizer.KoreanToken> tokens =
 		// OpenKoreanTextProcessorJava.tokenize(normalized);
